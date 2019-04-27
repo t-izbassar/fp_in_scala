@@ -93,4 +93,7 @@ object List {
     case (Cons(h1, t1), Cons(h2, t2)) =>
       Cons(f(h1, h2), zipWith(t1, t2)(f))
   }
+
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean =
+    ???
 }
