@@ -69,7 +69,7 @@ object Stream {
   def cons[A](h: => A, tl: => Stream[A]): Stream[A] = {
     lazy val head = h
     lazy val tail = tl
-    Cons(() => head, () => tl)
+    Cons(() => head, () => tail)
   }
 
   def empty[A]: Stream[A] = Empty
@@ -102,6 +102,71 @@ object Stream {
 
   def onesViaUnfold: Stream[Int] =
     constantViaUnfold(1)
+
+  def map[A, B](s: Stream[A])(f: A => B): Stream[B] =
+    unfold(s)(
+      x =>
+        x match {
+          case Empty       => None
+          case Cons(h, tl) => Some((f(h()), tl()))
+        }
+    )
+
+  def take[A](s: Stream[A], n: Int): Stream[A] =
+    unfold(s) { x =>
+      x match {
+        case Cons(h, tl) if n == 1 => Some((h(), empty))
+        case Cons(h, tl) if n > 1  => Some((h(), tl().take(n - 1)))
+        case _                     => None
+      }
+    }
+
+  def takeWhile[A](s: Stream[A])(p: A => Boolean): Stream[A] = unfold(s)(
+    x =>
+      x match {
+        case Cons(h, tl) if (p(h())) => Some((h(), tl().takeWhile(p)))
+        case _                       => None
+      }
+  )
+
+  def zipWith[A, B, C](as: Stream[A], bs: Stream[B])(
+      f: (A, B) => C
+  ): Stream[C] = {
+    unfold((as, bs))(
+      x =>
+        x match {
+          case (_, Empty) => None
+          case (Empty, _) => None
+          case (Cons(h1, t1), Cons(h2, t2)) =>
+            Some(
+              (
+                f(h1(), h2()),
+                (t1(), t2())
+              )
+            )
+        }
+    )
+  }
+
+  def zipAll[A, B](
+      s1: Stream[A],
+      s2: Stream[B]
+  ): Stream[(Option[A], Option[B])] =
+    unfold((s1, s2))(
+      x =>
+        x match {
+          case (Empty, Empty) => None
+          case (Empty, Cons(h2, t2)) =>
+            Some(((None, Some(h2())), (empty, t2())))
+          case (Cons(h1, t1), Empty) =>
+            Some(((Some(h1()), None), (t1(), empty)))
+          case (Cons(h1, t1), Cons(h2, t2)) => {
+            val value = (Some(h1()), Some(h2()))
+            val state = (t1(), t2())
+            Some((value, state))
+          }
+        }
+    )
 
   def apply[A](as: A*): Stream[A] =
     if (as.isEmpty) empty
