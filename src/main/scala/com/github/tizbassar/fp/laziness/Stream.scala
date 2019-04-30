@@ -74,8 +74,10 @@ object Stream {
 
   def empty[A]: Stream[A] = Empty
 
-  def constant[A](a: A): Stream[A] =
-    cons(a, constant(a))
+  def constant[A](a: A): Stream[A] = {
+    lazy val ones: Stream[A] = cons(a, ones)
+    ones
+  }
 
   def from(n: Int): Stream[Int] =
     cons(n, from(n + 1))
