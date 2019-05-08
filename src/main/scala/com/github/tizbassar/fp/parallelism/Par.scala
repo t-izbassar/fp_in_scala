@@ -23,6 +23,9 @@ object Par {
         def call = a(es).get
       })
 
+  def delay[A](fa: => Par[A]): Par[A] =
+    es => fa(es)
+
   def unit[A](a: A): Par[A] = es => UnitFuture(a)
   def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
 
@@ -69,7 +72,7 @@ object Par {
       unit(ints.headOption getOrElse 0)
     else {
       val (l, r) = ints.splitAt(ints.length / 2)
-      map2(fork(sum(l)), fork(sum(r)))(_ + _) 
+      map2(fork(sum(l)), fork(sum(r)))(_ + _)
     }
 
   private case class UnitFuture[A](get: A) extends Future[A] {
