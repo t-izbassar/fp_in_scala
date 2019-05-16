@@ -1,12 +1,68 @@
 package com.github.tizbassar.fp.testing
 import com.github.tizbassar.fp.state.State
 import com.github.tizbassar.fp.state.RNG
+import com.github.tizbassar.fp.laziness.Stream
+import Prop._
 
-trait Prop {
-  def check: Boolean
-  def &&(p: Prop): Prop = new Prop {
-    def check: Boolean = Prop.this.check && p.check
+object Prop {
+  type FailedCase = String
+  type SucessCount = Int
+  type TestCases = Int
+
+  def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop { (n, rng) =>
+    randomStream(as)(rng)
+      .zip(Stream.from(0))
+      .take(n)
+      .map {
+        case (a, i) =>
+          try {
+            if (f(a)) Passed else Falsified(a.toString, i)
+          } catch {
+            case e: Exception => Falsified(buildMsg(a, e), i)
+          }
+      }
+      .find(_.isFalsified)
+      .getOrElse(Passed)
   }
+
+  def randomStream[A](g: Gen[A])(rng: RNG): Stream[A] =
+    Stream.unfold(rng)(rng => Some(g.sample.run(rng)))
+
+  def buildMsg[A](s: A, e: Exception): String =
+    s"test case: $s\n" +
+      s"generated an exception: ${e.getMessage}\n" +
+      s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
+}
+
+case class Prop(run: (TestCases, RNG) => Result) {
+  def &&(p: Prop): Prop = Prop(
+    (n, rng) =>
+      run(n, rng) match {
+        case Passed => p.run(n, rng)
+        case x      => x
+      }
+  )
+
+  def ||(p: Prop): Prop = Prop(
+    (n, rng) =>
+      run(n, rng) match {
+        case Falsified(_, _) => p.run(n, rng)
+        case x               => x
+      }
+  )
+}
+
+sealed trait Result {
+  def isFalsified: Boolean
+}
+
+case object Passed extends Result {
+  def isFalsified: Boolean = false
+}
+
+case class Falsified(failure: FailedCase, successes: SucessCount)
+    extends Result {
+  def isFalsified: Boolean = true
 }
 
 case class Gen[A](sample: State[RNG, A]) {
