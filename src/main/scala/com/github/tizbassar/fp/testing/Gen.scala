@@ -3,6 +3,10 @@ import com.github.tizbassar.fp.state.State
 import com.github.tizbassar.fp.state.RNG
 import com.github.tizbassar.fp.laziness.Stream
 import Prop._
+import com.github.tizbassar.fp.state.SimpleRNG
+import com.github.tizbassar.fp.parallelism.Par
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 case class Prop(run: (MaxSize, TestCases, RNG) => Result) {
   def &&(p: Prop): Prop = Prop(
@@ -41,6 +45,10 @@ object Prop {
   }
 
   case object Passed extends Result {
+    def isFalsified: Boolean = false
+  }
+
+  case object Proved extends Result {
     def isFalsified: Boolean = false
   }
 
@@ -87,6 +95,25 @@ object Prop {
           .toList
           .reduce(_ && _)
       prop.run(max, n, rng)
+  }
+
+  def run(
+      p: Prop,
+      maxSize: Int = 100,
+      testCases: Int = 100,
+      rng: RNG = SimpleRNG(System.currentTimeMillis())
+  ): Unit =
+    p.run(maxSize, testCases, rng) match {
+      case Falsified(failure, successes) =>
+        println(s"! Falsified after $successes passed tests:\n $failure")
+      case Passed =>
+        println(s"OK, passed $testCases tests.")
+      case Proved =>
+        println(s"OK, proved property.")
+    }
+
+  def check(p: => Boolean): Prop = Prop { (_, _, _) =>
+    if (p) Proved else Falsified("()", 0)
   }
 
   def randomStream[A](g: Gen[A])(rng: RNG): Stream[A] =
@@ -145,6 +172,11 @@ object Prop {
         listOfN(n, g)
       }
 
+    def listOf1[A](g: Gen[A]): SGen[List[A]] =
+      SGen { n =>
+        g.listOfN(n max 1)
+      }
+
   }
 
   case class SGen[+A](forSize: Int => Gen[A]) {
@@ -158,4 +190,29 @@ object Prop {
         forSize(n) flatMap (f(_).forSize(n))
       })
   }
+}
+
+object Tests extends App {
+  val smallInt = Gen.choose(-10, 10)
+  val maxPropFailing = forAll(Gen.listOf(smallInt)) { ns =>
+    val max = ns.max
+    !ns.exists(_ > max)
+  }
+  val maxProp = forAll(Gen.listOf1(smallInt)) { ns =>
+    val max = ns.max
+    !ns.exists(_ > max)
+  }
+  val sortedProp = forAll(Gen.listOf(smallInt)) { ns =>
+    val sorted = ns.sorted
+    sorted.isEmpty || sorted.tail.isEmpty || !sorted.zip(sorted.tail).exists {
+      case (a, b) => a > b
+    } && !ns.exists(!sorted.contains(_)) && !sorted.exists(!ns.contains(_))
+  }
+  val ES: ExecutorService = Executors.newCachedThreadPool
+  val parProp = Prop.check {
+    val p = Par.map(Par.unit(1))(_ + 1)
+    val p2 = Par.unit(2)
+    p(ES).get() == p2(ES).get()
+  }
+  Prop.run(maxProp)
 }
