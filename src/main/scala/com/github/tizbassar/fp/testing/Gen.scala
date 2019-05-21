@@ -3,10 +3,12 @@ import com.github.tizbassar.fp.state.State
 import com.github.tizbassar.fp.state.RNG
 import com.github.tizbassar.fp.laziness.Stream
 import Prop._
+import Gen._
 import com.github.tizbassar.fp.state.SimpleRNG
 import com.github.tizbassar.fp.parallelism.Par
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import scala.collection.GenMap
 
 case class Prop(run: (MaxSize, TestCases, RNG) => Result) {
   def &&(p: Prop): Prop = Prop(
@@ -97,6 +99,16 @@ object Prop {
       prop.run(max, n, rng)
   }
 
+  val S = union(
+    choose(2, 4).map(Executors.newFixedThreadPool),
+    unit(Executors.newCachedThreadPool())
+  )
+
+  def forAllPar[A](g: Gen[A])(f: A => Par.Par[Boolean]): Prop =
+    forAll(S ** g) {
+      case (s, a) => f(a)(s).get
+    }
+
   def run(
       p: Prop,
       maxSize: Int = 100,
@@ -132,6 +144,11 @@ object Prop {
     def map[B](f: A => B): Gen[B] =
       Gen(sample.map(f))
 
+    def map2[B, C](g: Gen[B])(f: (A, B) => C): Gen[C] =
+      Gen(
+        sample.map2(g.sample)(f)
+      )
+
     def listOfN(size: Int): Gen[List[A]] =
       Gen.listOfN(size, this)
 
@@ -139,6 +156,9 @@ object Prop {
       size flatMap (n => this.listOfN(n))
 
     def unsized: SGen[A] = SGen(_ => this)
+
+    def **[B](g: Gen[B]): Gen[(A, B)] =
+      (this map2 g)((_, _))
   }
 
   object Gen {
@@ -210,9 +230,20 @@ object Tests extends App {
   }
   val ES: ExecutorService = Executors.newCachedThreadPool
   val parProp = Prop.check {
-    val p = Par.map(Par.unit(1))(_ + 1)
-    val p2 = Par.unit(2)
-    p(ES).get() == p2(ES).get()
+    Par
+      .equal(
+        Par.map(Par.unit(1))(_ + 1),
+        Par.unit(2)
+      )(ES)
+      .get
   }
+  val pint = Gen.choose(0, 10) map (Par.unit(_))
+  val parMappingProp = forAllPar(pint)(n => Par.equal(Par.map(n)(y => y), n))
+
+  val forkingProp = forAllPar(pint) { n => {
+    Par.equal(
+      Par.fork(n), n
+    )
+  }}
   Prop.run(maxProp)
 }

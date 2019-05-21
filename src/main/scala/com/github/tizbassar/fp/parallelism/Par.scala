@@ -17,6 +17,9 @@ object Par {
       Map2Future(af, bf, f)
     }
 
+  def equal[A](p: Par[A], p2: Par[A]): Par[Boolean] =
+    Par.map2(p, p2)(_ == _)
+
   def fork[A](a: => Par[A]): Par[A] =
     es =>
       es.submit(new Callable[A] {
