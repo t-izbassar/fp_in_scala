@@ -66,6 +66,7 @@ object Monoid {
         y <- gen
         z <- gen
       } yield (x, y, z)
-    ) { case (a, b, c) => m.op(a, m.op(b, c)) == m.op(m.op(a, b), c)
-    } && forAll(gen)(a => m.op(a, m.zero) == a && m.op(m.zero, a) == a)
+    ) { case (a, b, c) => m.op(a, m.op(b, c)) == m.op(m.op(a, b), c) } && forAll(
+      gen
+    )(a => m.op(a, m.zero) == a && m.op(m.zero, a) == a)
 }
