@@ -12,6 +12,18 @@ object Monoid {
     override def zero: A = m.zero
   }
 
+  def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
+    as.foldRight(m.zero)((a, b) => m.op(f(a), b))
+
+  def foldMapV[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): B = {
+    if (v.isEmpty) m.zero
+    else if (v.length == 1) f(v.head)
+    else {
+      val (l, r) = v.splitAt(v.length / 2)
+      m.op(foldMapV(l, m)(f), foldMapV(r, m)(f))
+    }
+  }
+
   val stringMonoid = new Monoid[String] {
     def op(a1: String, a2: String): String = a1 + a2
     def zero: String = ""
