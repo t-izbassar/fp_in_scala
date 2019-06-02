@@ -84,4 +84,52 @@ object Monoid {
     ) { case (a, b, c) => m.op(a, m.op(b, c)) == m.op(m.op(a, b), c) } && forAll(
       gen
     )(a => m.op(a, m.zero) == a && m.op(m.zero, a) == a)
+
+  sealed trait WC
+  case class Stub(chars: String) extends WC
+  case class Part(lStub: String, words: Int, rStub: String) extends WC
+
+  val wcMonoid: Monoid[WC] = new Monoid[WC] {
+    override def zero: WC = Stub("")
+
+    override def op(wc1: WC, wc2: WC): WC = (wc1, wc2) match {
+      case (Stub(c1), Stub(c2))      => Stub(c1 + c2)
+      case (Stub(c1), Part(l, w, r)) => Part(c1 + l, w, r)
+      case (Part(l, w, r), Stub(c2)) => Part(l, w, r + c2)
+      case (Part(l1, w1, r1), Part(l2, w2, r2)) =>
+        Part(l1, w1 + (if ((r1 + l2).isEmpty) 0 else 1) + w2, r2)
+    }
+  }
+
+  def countWords(s: String): Int = {
+    def wc(c: Char): WC =
+      if (c.isWhitespace) Part("", 0, "")
+      else Stub(c.toString)
+
+    def unstub(s: String) = s.length min 1
+
+    foldMapV(s.toIndexedSeq, wcMonoid)(wc) match {
+      case Stub(s)       => unstub(s)
+      case Part(l, w, r) => unstub(l) + w + unstub(r)
+    }
+  }
+
+  /**
+    * The function `String => Int` preserves the monoid
+    * structure for int addition monoid and string
+    * concatenation monoid. String.length is **monoid
+    * homomorphism**.
+    *
+    * If we have monoids `M` and `N`
+    * then monoid homomorphism obeys following law:
+    *
+    * {{
+    * M.op(f(x), f(y)) == f(N.op(x, y))
+    * }}
+    *
+    * If there is a homomorphism in both directions
+    * then monoids are isomorphic.
+    */
+  val homomorphism = "foo".length + "bar".length ==
+    ("foo" + "bar").length
 }
