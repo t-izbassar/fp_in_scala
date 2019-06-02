@@ -27,6 +27,14 @@ object Monoid {
   def concatenate[A](as: List[A], m: Monoid[A]): A =
     as.foldLeft(m.zero)(m.op)
 
+  def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
+    new Monoid[(A, B)] {
+      def op(a1: (A, B), a2: (A, B)) =
+        (A.op(a1._1, a2._1), B.op(a1._2, a2._2))
+
+      def zero: (A, B) = (A.zero, B.zero)
+    }
+
   val stringMonoid = new Monoid[String] {
     def op(a1: String, a2: String): String = a1 + a2
     def zero: String = ""
@@ -71,6 +79,28 @@ object Monoid {
     override def zero: A => A = identity
   }
 
+  def mapMergeMonoid[K, V](V: Monoid[V]): Monoid[Map[K, V]] =
+    new Monoid[Map[K, V]] {
+      def zero = Map[K, V]()
+      def op(a: Map[K, V], b: Map[K, V]) =
+        (a.keySet ++ b.keySet).foldLeft(zero) { (acc, k) =>
+          acc.updated(
+            k,
+            V.op(
+              a.getOrElse(k, V.zero),
+              b.getOrElse(k, V.zero)
+            )
+          )
+        }
+    }
+
+  def functionMonoid[A, B](B: Monoid[B]): Monoid[A => B] =
+    new Monoid[A => B] {
+      def zero(): A => B = _ => B.zero
+      def op(f1: A => B, f2: A => B): A => B =
+        a => B.op(f1(a), f2(a))
+    }
+
   import com.github.tizbassar.fp.testing._
   import Prop._
 
@@ -113,6 +143,8 @@ object Monoid {
       case Part(l, w, r) => unstub(l) + w + unstub(r)
     }
   }
+
+  def bag[A](as: IndexedSeq[A]): Map[A, Int] = ???
 
   /**
     * The function `String => Int` preserves the monoid
