@@ -16,11 +16,11 @@ object MyModule {
 
 object PolymorphicFunctions {
 
-  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
+  def isSorted[A](as: Array[A], gt: (A, A) => Boolean): Boolean = {
     @annotation.tailrec
     def go(i: Int): Boolean = {
       if (i + 1 == as.length) true
-      else if(!gt(as(i), as(i + 1))) false
+      else if (!gt(as(i), as(i + 1))) false
       else go(i + 1)
     }
     if (as.length <= 1) true

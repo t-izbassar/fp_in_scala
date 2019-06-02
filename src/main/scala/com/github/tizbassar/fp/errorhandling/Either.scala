@@ -35,7 +35,7 @@ object Either {
     }
 
   def traverse[E, A, B](as: List[A])(
-      f: A => Either[E, B]
+    f: A => Either[E, B]
   ): Either[E, List[B]] = as match {
     case Nil        => Right(Nil)
     case head :: tl => f(head).map2(traverse(tl)(f))(_ :: _)

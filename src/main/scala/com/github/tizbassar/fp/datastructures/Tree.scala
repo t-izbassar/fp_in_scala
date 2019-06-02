@@ -40,5 +40,5 @@ object Tree {
     fold(tree)(x => 0)((x, y) => 1 + (x max y))
 
   def mapViaFold[A, B](tree: Tree[A])(f: A => B): Tree[B] =
-    fold(tree)(x => Leaf(f(x)):Tree[B])(Branch(_, _))
+    fold(tree)(x => Leaf(f(x)): Tree[B])(Branch(_, _))
 }

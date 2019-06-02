@@ -110,10 +110,10 @@ object Prop {
     }
 
   def run(
-      p: Prop,
-      maxSize: Int = 100,
-      testCases: Int = 100,
-      rng: RNG = SimpleRNG(System.currentTimeMillis())
+    p: Prop,
+    maxSize: Int = 100,
+    testCases: Int = 100,
+    rng: RNG = SimpleRNG(System.currentTimeMillis())
   ): Unit =
     p.run(maxSize, testCases, rng) match {
       case Falsified(failure, successes) =>
@@ -240,10 +240,13 @@ object Tests extends App {
   val pint = Gen.choose(0, 10) map (Par.unit(_))
   val parMappingProp = forAllPar(pint)(n => Par.equal(Par.map(n)(y => y), n))
 
-  val forkingProp = forAllPar(pint) { n => {
-    Par.equal(
-      Par.fork(n), n
-    )
-  }}
+  val forkingProp = forAllPar(pint) { n =>
+    {
+      Par.equal(
+        Par.fork(n),
+        n
+      )
+    }
+  }
   Prop.run(maxProp)
 }

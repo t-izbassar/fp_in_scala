@@ -1,5 +1,3 @@
 package com.github.tizbassar
 
-package object fp {
-
-}
+package object fp {}

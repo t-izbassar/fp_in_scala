@@ -24,6 +24,9 @@ object Monoid {
     }
   }
 
+  def concatenate[A](as: List[A], m: Monoid[A]): A =
+    as.foldLeft(m.zero)(m.op)
+
   val stringMonoid = new Monoid[String] {
     def op(a1: String, a2: String): String = a1 + a2
     def zero: String = ""

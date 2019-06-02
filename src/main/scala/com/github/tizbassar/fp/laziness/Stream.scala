@@ -66,7 +66,7 @@ sealed trait Stream[+A] {
   }
 
   def find(f: A => Boolean): Option[A] = this match {
-    case Empty => None
+    case Empty       => None
     case Cons(h, tl) => if (f(h())) Some(h()) else tl().find(f)
   }
 }
@@ -140,7 +140,7 @@ object Stream {
   )
 
   def zipWith[A, B, C](as: Stream[A], bs: Stream[B])(
-      f: (A, B) => C
+    f: (A, B) => C
   ): Stream[C] = {
     unfold((as, bs))(
       x =>
@@ -159,8 +159,8 @@ object Stream {
   }
 
   def zipAll[A, B](
-      s1: Stream[A],
-      s2: Stream[B]
+    s1: Stream[A],
+    s2: Stream[B]
   ): Stream[(Option[A], Option[B])] =
     unfold((s1, s2))(
       x =>

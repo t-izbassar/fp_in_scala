@@ -39,16 +39,16 @@ object Option {
     ao.flatMap(a => bo.map(b => f(a, b)))
 
   def sequence[A](as: List[Option[A]]): Option[List[A]] = as match {
-    case Nil => Some(Nil)
+    case Nil        => Some(Nil)
     case head :: tl => map2(head, sequence(tl))(_ :: _)
   }
 
   def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] =
     a match {
-      case Nil => Some(Nil)
+      case Nil        => Some(Nil)
       case head :: tl => map2(f(head), traverse(tl)(f))(_ :: _)
     }
 
-    def sequenceViaTraverse[A](as: List[Option[A]]): Option[List[A]] =
-      traverse(as)(a => a)
+  def sequenceViaTraverse[A](as: List[Option[A]]): Option[List[A]] =
+    traverse(as)(a => a)
 }
