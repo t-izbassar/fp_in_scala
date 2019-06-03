@@ -134,6 +134,12 @@ object Monad {
       st.flatMap(f)
   }
 
+  def eitherMonad[E] = new Monad[({ type f[x] = Either[E, x] })#f] {
+    def unit[A](a: => A): Either[E, A] = Right(a)
+    def flatMap[A, B](ea: Either[E, A])(f: A => Either[E, B]): Either[E, B] =
+      ea flatMap f
+  }
+
   object Laws {
 
     // Associativity law: x.flatMap(f).flatMap(g) == x.flatMap(a => f(a).flatMap(g))
