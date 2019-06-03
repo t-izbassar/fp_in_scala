@@ -1,4 +1,5 @@
 package com.github.tizbassar.fp.monads
+import com.github.tizbassar.fp.applicative.Applicative
 import com.github.tizbassar.fp.testing._
 import com.github.tizbassar.fp.testing.Prop._
 import com.github.tizbassar.fp.parallelism._
@@ -39,33 +40,23 @@ object Functor {
   * an imperative program with statements assigned to
   * variables. The monad specifies what occurs at
   * statement boundaries.
+  *
+  * Monadic computations may choose structure dynamically,
+  * based on the result of previous computations. It also
+  * allows for context sensivity.
+  *
+  * Monad makes effects first class; they may be generated
+  * at interpretation time, rather than chosen ahead of time.
   */
-trait Monad[F[_]] extends Functor[F] {
+trait Monad[F[_]] extends Applicative[F] {
 
-  def unit[A](a: => A): F[A]
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
 
-  def map[A, B](fa: F[A])(f: A => B): F[B] =
+  override def map[A, B](fa: F[A])(f: A => B): F[B] =
     flatMap(fa)(a => unit(f(a)))
 
   def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] =
     flatMap(fa)(a => map(fb)(b => f(a, b)))
-
-  def sequence[A](lma: List[F[A]]): F[List[A]] =
-    lma.foldRight(unit(List[A]()): F[List[A]]) { (fa: F[A], fla: F[List[A]]) =>
-      map2(fa, fla)(_ :: _)
-    }
-
-  def traverse[A, B](la: List[A])(f: A => F[B]): F[List[B]] =
-    la.foldRight(unit(Nil: List[B])) { (a: A, flb: F[List[B]]) =>
-      map2(f(a), flb)(_ :: _)
-    }
-
-  def replicateM[A](n: Int, fa: F[A]): F[List[A]] =
-    sequence(List.fill(n)(fa))
-
-  def product[A, B](fa: F[A], fb: F[B]): F[(A, B)] =
-    map2(fa, fb)((_, _))
 
   def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] =
     ms.foldRight(unit(Nil: List[A])) { (a: A, fla: F[List[A]]) =>
