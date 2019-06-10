@@ -6,7 +6,7 @@ import fp.monads.Functor
   * is fixed. Applicative sequence effects. It also
   * constructs context-free computations.
   */
-trait Applicative[F[_]] extends Functor[F] {
+trait Applicative[F[_]] extends Functor[F] { self =>
   def unit[A](a: => A): F[A]
   def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C]
 
@@ -52,6 +52,22 @@ trait Applicative[F[_]] extends Functor[F] {
 
   def product[A, B](fa: F[A], fb: F[B]): F[(A, B)] =
     map2(fa, fb)((_, _))
+
+  def product[G[_]](
+    G: Applicative[G]
+  ): Applicative[({ type f[x] = (F[x], G[x]) })#f] =
+    new Applicative[({ type f[x] = (F[x], G[x]) })#f] {
+      def unit[A](a: => A): (F[A], G[A]) =
+        (self.unit(a), G.unit(a))
+
+      def map2[A, B, C](fa: (F[A], G[A]), fb: (F[B], G[B]))(
+        f: (A, B) => C
+      ): (F[C], G[C]) =
+        (
+          self.map2(fa._1, fb._1)((a, b) => f(a, b)),
+          G.map2(fa._2, fb._2)((a, b) => f(a, b))
+        )
+    }
 }
 
 object Applicative {
