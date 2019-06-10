@@ -1,5 +1,5 @@
-package com.github.tizbassar.fp.parsing
-import com.github.tizbassar.fp.testing.Prop
+package fp.parsing
+import fp.testing.Prop
 import scala.util.matching.Regex
 
 trait Parsers[ParseError, Parser[+ _]] { self =>

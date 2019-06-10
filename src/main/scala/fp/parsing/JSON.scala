@@ -1,4 +1,4 @@
-package com.github.tizbassar.fp.parsing
+package fp.parsing
 
 trait JSON
 object JSON {

@@ -1,4 +1,4 @@
-package com.github.tizbassar.fp.errorhandling
+package fp.errorhandling
 
 sealed trait Either[+E, +A] {
   def map[B](f: A => B): Either[E, B] = this match {

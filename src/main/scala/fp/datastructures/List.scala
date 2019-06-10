@@ -1,4 +1,4 @@
-package com.github.tizbassar.fp.datastructures
+package fp.datastructures
 
 sealed trait List[+A]
 

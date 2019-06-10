@@ -1,11 +1,11 @@
-package com.github.tizbassar.fp.monads
-import com.github.tizbassar.fp.applicative.Applicative
-import com.github.tizbassar.fp.testing._
-import com.github.tizbassar.fp.testing.Prop._
-import com.github.tizbassar.fp.parallelism._
-import com.github.tizbassar.fp.parallelism.Par._
-import com.github.tizbassar.fp.state.State
-import com.github.tizbassar.fp.state.State._
+package fp.monads
+import fp.applicative.Applicative
+import fp.testing._
+import fp.testing.Prop._
+import fp.parallelism._
+import fp.parallelism.Par._
+import fp.state.State
+import fp.state.State._
 
 trait Functor[F[_]] {
   def map[A, B](fa: F[A])(f: A => B): F[B]

@@ -1,4 +1,8 @@
-package com.github.tizbassar.fp.monoid
+package fp.monoid
+import fp.datastructures.Tree
+import fp.datastructures.Leaf
+import fp.datastructures.Branch
+import fp.datastructures.Tree._
 
 trait Foldable[F[_]] {
   def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B
@@ -23,11 +27,6 @@ object Foldable {
         mb.op(f(a), b)
       }
   }
-
-  import com.github.tizbassar.fp.datastructures.Tree
-  import com.github.tizbassar.fp.datastructures.Leaf
-  import com.github.tizbassar.fp.datastructures.Branch
-  import com.github.tizbassar.fp.datastructures.Tree._
 
   val foldableTree: Foldable[Tree] = new Foldable[Tree] {
     def foldMap[A, B](as: Tree[A])(f: A => B)(mb: Monoid[B]): B =

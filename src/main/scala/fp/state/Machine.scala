@@ -1,4 +1,4 @@
-package com.github.tizbassar.fp.state
+package fp.state
 
 sealed trait Input
 case object Coin extends Input

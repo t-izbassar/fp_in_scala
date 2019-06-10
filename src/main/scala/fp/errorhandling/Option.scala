@@ -1,4 +1,4 @@
-package com.github.tizbassar.fp.errorhandling
+package fp.errorhandling
 
 import scala.{Option => _, Some => _, Either => _, _}
 

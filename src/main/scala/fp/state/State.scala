@@ -1,4 +1,4 @@
-package com.github.tizbassar.fp.state
+package fp.state
 
 trait RNG {
   def nextInt: (Int, RNG)

@@ -1,4 +1,4 @@
-package com.github.tizbassar.fp.monoid
+package fp.monoid
 
 trait Monoid[A] {
   def op(a1: A, a2: A): A
@@ -101,7 +101,7 @@ object Monoid {
         a => B.op(f1(a), f2(a))
     }
 
-  import com.github.tizbassar.fp.testing._
+  import fp.testing._
   import Prop._
 
   def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop =

@@ -1,4 +1,4 @@
-package com.github.tizbassar.fp.laziness
+package fp.laziness
 
 import Stream._
 

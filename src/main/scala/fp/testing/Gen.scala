@@ -1,11 +1,11 @@
-package com.github.tizbassar.fp.testing
-import com.github.tizbassar.fp.state.State
-import com.github.tizbassar.fp.state.RNG
-import com.github.tizbassar.fp.laziness.Stream
+package fp.testing
+import fp.state.State
+import fp.state.RNG
+import fp.laziness.Stream
 import Prop._
 import Gen._
-import com.github.tizbassar.fp.state.SimpleRNG
-import com.github.tizbassar.fp.parallelism.Par
+import fp.state.SimpleRNG
+import fp.parallelism.Par
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import scala.collection.GenMap

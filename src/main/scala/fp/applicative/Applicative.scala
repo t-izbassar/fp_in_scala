@@ -1,5 +1,5 @@
-package com.github.tizbassar.fp.applicative
-import com.github.tizbassar.fp.monads.Functor
+package fp.applicative
+import fp.monads.Functor
 
 /**
   * With Applicative the structure of computation

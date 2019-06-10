@@ -1,4 +1,4 @@
-package com.github.tizbassar.fp.parallelism
+package fp.parallelism
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
