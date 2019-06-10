@@ -78,7 +78,15 @@ object Applicative {
   def productF[I, O, I2, O2](f: I => O, g: I2 => O2): (I, I2) => (O, O2) =
     (i, i2) => (f(i), g(i2))
   }}
- */
+   */
+
+  val streamApplicative = new Applicative[Stream] {
+    def unit[A](a: => A): Stream[A] =
+      Stream.continually(a)
+
+    def map2[A, B, C](a: Stream[A], b: Stream[B])(f: (A, B) => C): Stream[C] =
+      a zip b map f.tupled
+  }
 }
 
 sealed trait Validation[+E, +A]
