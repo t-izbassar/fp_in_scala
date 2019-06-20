@@ -8,25 +8,20 @@ import fp.monads.Functor
   */
 trait Applicative[F[_]] extends Functor[F] { self =>
   def unit[A](a: => A): F[A]
-  def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C]
+  def apply[A, B](fab: F[A => B])(fa: F[A]): F[B]
 
-  def apply[A, B](fab: F[A => B])(fa: F[A]): F[B] =
-    map2(fab, fa) { (f: A => B, a: A) =>
-      f(a)
-    }
-
-  def mapViaApply[A, B](fa: F[A])(f: A => B): F[B] =
+  def map[A, B](fa: F[A])(f: A => B): F[B] =
     apply(unit(f))(fa)
 
-  def map2ViaApply[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] =
-    apply(mapViaApply(fa)(f.curried): F[B => C])(fb)
+  def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] =
+    apply(map(fa)(f.curried): F[B => C])(fb)
 
   // f.curried: A => B => C => D
   def map3[A, B, C, D](fa: F[A], fb: F[B], fc: F[C])(
     f: (A, B, C) => D
   ): F[D] = {
     def g(a: A, b: B): C => D = f.curried(a)(b)
-    apply(map2ViaApply(fa, fb)(g))(fc)
+    apply(map2(fa, fb)(g))(fc)
   }
 
   def map4[A, B, C, D, E](fa: F[A], fb: F[B], fc: F[C], fd: F[D])(
@@ -36,7 +31,13 @@ trait Applicative[F[_]] extends Functor[F] { self =>
     apply(map3(fa, fb, fc)(g))(fd)
   }
 
-  def map[A, B](fa: F[A])(f: A => B): F[B] =
+  // This shows that map2 could be the primitive combinator
+  def applyViaMap2[A, B](fab: F[A => B])(fa: F[A]): F[B] =
+    map2(fab, fa) { (f: A => B, a: A) =>
+      f(a)
+    }
+
+  def mapViaMap2[A, B](fa: F[A])(f: A => B): F[B] =
     map2(fa, unit(()))((a, _) => f(a))
 
   def traverse[A, B](as: List[A])(f: A => F[B]): F[List[B]] =
@@ -60,13 +61,26 @@ trait Applicative[F[_]] extends Functor[F] { self =>
       def unit[A](a: => A): (F[A], G[A]) =
         (self.unit(a), G.unit(a))
 
-      def map2[A, B, C](fa: (F[A], G[A]), fb: (F[B], G[B]))(
-        f: (A, B) => C
-      ): (F[C], G[C]) =
+      def apply[A, B](
+        fgab: (F[A => B], G[A => B])
+      )(fga: (F[A], G[A])): (F[B], G[B]) =
         (
-          self.map2(fa._1, fb._1)((a, b) => f(a, b)),
-          G.map2(fa._2, fb._2)((a, b) => f(a, b))
+          self.apply(fgab._1)(fga._1),
+          G.apply(fgab._2)(fga._2)
         )
+    }
+
+  def compose[G[_]](
+    G: Applicative[G]
+  ): Applicative[({ type f[x] = F[G[x]] })#f] =
+    new Applicative[({ type f[x] = F[G[x]] })#f] {
+      def unit[A](a: => A): F[G[A]] =
+        self.unit(G.unit(a))
+
+      def apply[A, B](fgab: F[G[A => B]])(fga: F[G[A]]): F[G[B]] =
+        self.map2(fgab, fga) { (gab: G[A => B], ga: G[A]) =>
+          G.apply(gab)(ga)
+        }
     }
 }
 
@@ -100,8 +114,15 @@ object Applicative {
     def unit[A](a: => A): Stream[A] =
       Stream.continually(a)
 
-    def map2[A, B, C](a: Stream[A], b: Stream[B])(f: (A, B) => C): Stream[C] =
+    override def map2[A, B, C](a: Stream[A], b: Stream[B])(
+      f: (A, B) => C
+    ): Stream[C] =
       a zip b map f.tupled
+
+    def apply[A, B](fab: Stream[A => B])(fa: Stream[A]): Stream[B] =
+      map2(fab, fa) { (f, a) =>
+        f(a)
+      }
   }
 }
 
@@ -115,7 +136,7 @@ object Validation {
   def validationApplicative[E] =
     new Applicative[({ type f[x] = Validation[E, x] })#f] {
       def unit[A](a: => A): Validation[E, A] = Success(a)
-      def map2[A, B, C](va: Validation[E, A], vb: Validation[E, B])(
+      override def map2[A, B, C](va: Validation[E, A], vb: Validation[E, B])(
         f: (A, B) => C
       ): Validation[E, C] =
         (va, vb) match {
@@ -124,6 +145,13 @@ object Validation {
           case (e @ Failure(_, _), Success(_)) => e
           case (Success(_), e @ Failure(_, _)) => e
           case (Success(a), Success(b))        => Success(f(a, b))
+        }
+
+      def apply[A, B](
+        fab: Validation[E, A => B]
+      )(fa: Validation[E, A]): Validation[E, B] =
+        map2(fab, fa) { (f, a) =>
+          f(a)
         }
     }
 }

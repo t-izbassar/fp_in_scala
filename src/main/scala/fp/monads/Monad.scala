@@ -55,7 +55,10 @@ trait Monad[F[_]] extends Applicative[F] {
   override def map[A, B](fa: F[A])(f: A => B): F[B] =
     flatMap(fa)(a => unit(f(a)))
 
-  def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] =
+  def apply[A, B](fab: F[A => B])(fa: F[A]): F[B] =
+    flatMap(fab)((f: A => B) => map(fa)(f))
+
+  override def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] =
     flatMap(fa)(a => map(fb)(b => f(a, b)))
 
   def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] =
